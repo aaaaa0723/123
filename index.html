@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>關西隨身導航地圖包</title>
+    <style>
+        /* ================= 基礎設定 ================= */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #F5EAE0;
+            font-family: 'Helvetica Neue', Arial, '微軟正黑體', sans-serif;
+            color: #5C4A3D;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            transform: translateY(-15%);
+            width: 90%;
+            max-width: 400px;
+            position: relative;
+        }
+
+        /* ================= 頁面切換動畫 ================= */
+        .view {
+            display: none;
+            width: 100%;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ================= 標題與版面設計 ================= */
+        .title {
+            font-size: 24px;
+            margin-bottom: 24px;
+            letter-spacing: 2px;
+            text-align: center;
+            color: #4A3A2F;
+        }
+
+        .menu-box {
+            background: #FFFFFF;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(92, 74, 61, 0.08);
+            overflow: hidden;
+            max-height: 65vh; 
+            overflow-y: auto;
+        }
+
+        .menu-box::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* ================= 按鈕共用樣式 ================= */
+        .nav-btn {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 18px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #5C4A3D;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #EFE5D8;
+            transition: all 0.3s ease;
+        }
+        .nav-btn:last-child { border-bottom: none; }
+        .nav-btn:hover {
+            background-color: #FAF4EE;
+            padding-left: 25px;
+        }
+        .arrow-right { color: #A67B5B; }
+
+        .sub-btn {
+            font-size: 15px;
+            background-color: #FCFBF9;
+        }
+        .sub-btn:hover {
+            background-color: #F5EAE0;
+        }
+
+        /* ================= 子頁面頂部 (返回按鈕) ================= */
+        .sub-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .back-btn {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid #EFE5D8;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #A67B5B;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-right: 15px;
+        }
+        .back-btn:hover {
+            background: #FFFFFF;
+            color: #D35400;
+        }
+        .view-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4A3A2F;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        /* ================= 內容切換區塊 ================= */
+        .content-group { display: none; }
+        .content-group.active { display: block; }
+
+        /* ================= 第三層：地點連結 ================= */
+        .location-link {
+            display: block;
+            padding: 16px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #A67B5B; 
+            text-decoration: none;
+            background-color: #FFFFFF;
+            text-align: left;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid #F5EAE0;
+            line-height: 1.4;
+        }
+        .location-link:last-child { border-bottom: none; }
+        .location-link:hover {
+            color: #D35400; 
+            background-color: #FFF2E6;
+            padding-left: 25px; 
+        }
+        
+        /* 地點解說小字 */
+        .desc {
+            display: block;
+            font-size: 12px;
+            color: #8C7A6B;
+            margin-top: 5px;
+            font-weight: normal;
+        }
+
+        /* 空白狀態樣式 */
+        .empty-state {
+            padding: 30px 20px;
+            text-align: center;
+            color: #A67B5B;
+            font-size: 14px;
+            background-color: #FFFFFF;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div id="main-view" class="view active">
+        <h1 class="title">關西隨身導航包</h1>
+        <div class="menu-box">
+            <button class="nav-btn" onclick="goToCategory('cat1', '難波 / 心齋橋')">
+                難波 / 心齋橋 <span class="arrow-right">➔</span>
+            </button>
+            <button class="nav-btn" onclick="goToCategory('cat2', '梅田')">
+                梅田 <span class="arrow-right">➔</span>
+            </button>
+            <button class="nav-btn" onclick="goToCategory('cat3', '神戶')">
+                神戶 <span class="arrow-right">➔</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="sub-view" class="view">
+        <div class="sub-header">
+            <button class="back-btn" onclick="goBackToMain()">← 返回</button>
+            <h2 id="sub-title" class="view-title">分類名稱</h2>
+        </div>
+        <div class="menu-box">
+            <div id="sub-buttons-container"></div>
+        </div>
+    </div>
+
+    <div id="location-view" class="view">
+        <div class="sub-header">
+            <button class="back-btn" onclick="goBackToSub()">← 返回</button>
+            <h2 id="loc-title" class="view-title">子分類名稱</h2>
+        </div>
+        
+        <div class="menu-box">
+            
+            <!-- ================= 難波 / 心齋橋 ================= -->
+            <div id="cat1-sub1" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/ダイコクドラッグ" target="_blank">大國藥妝</a>
+                <a class="location-link" href="https://www.google.com/maps/search/ドン・キホーテ" target="_blank">唐吉訶德</a>
+                <a class="location-link" href="https://www.google.com/maps/search/マツモトキヨシ" target="_blank">松本清</a>
+            </div>
+            <div id="cat1-sub2" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/駿河屋" target="_blank">駿河屋</a>
+                <a class="location-link" href="https://www.google.com/maps/search/アニメイト" target="_blank">安利美特 (Animate)</a>
+            </div>
+            <div id="cat1-sub3" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/GU" target="_blank">GU</a>
+                <a class="location-link" href="https://www.google.com/maps/search/PARK" target="_blank">PARK <span class="desc">質感潮流選物店</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/Sense+of+Place" target="_blank">Sense of Place <span class="desc">Urban Research平價線</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/ZARA" target="_blank">ZARA</a>
+                <a class="location-link" href="https://www.google.com/maps/search/AYIN" target="_blank">AYIN <span class="desc">高端暗黑潮流買手店</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/オレンジストリート" target="_blank">橘子街 (Orange Street) <span class="desc">大阪潮牌大本營</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/ami+paris" target="_blank">ami paris <span class="desc">愛心A標誌服飾</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/human+made" target="_blank">human made <span class="desc">NIGO主理日系街頭潮牌</span></a>
+            </div>
+            <div id="cat1-sub4" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/328+NY3" target="_blank">328 NY3 <span class="desc">拿鐵與司康</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/スターバックス" target="_blank">星巴克</a>
+                <a class="location-link" href="https://www.google.com/maps/search/心斎橋焙煎所" target="_blank">心齋橋焙煎所 <span class="desc">自家烘焙手沖咖啡</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/Mel+Coffee+Roasters" target="_blank">Mel Coffee Roasters <span class="desc">墨爾本風手沖咖啡</span></a>
+            </div>
+            <div id="cat1-sub5" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/ダイソー" target="_blank">大創</a>
+                <a class="location-link" href="https://www.google.com/maps/search/無印良品" target="_blank">無印良品</a>
+                <a class="location-link" href="https://www.google.com/maps/search/3COINS" target="_blank">3coins</a>
+            </div>
+            <div id="cat1-sub6" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/Harbs" target="_blank">Harbs</a>
+                <a class="location-link" href="https://www.google.com/maps/search/MooKEN" target="_blank">MooKEN <span class="desc">水果聖代與雪派</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/カヌレ堂+CANELE+du+JAPON" target="_blank">canele du Japon <span class="desc">一口迷你可麗露</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/りくろーおじさんの店" target="_blank">rikuro's <span class="desc">現烤老爺爺起司蛋糕</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/ル・クロワッサン" target="_blank">le croissant <span class="desc">現烤明太子可頌</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/鳴門鯛焼本舗" target="_blank">鳴門雕燒本鋪 <span class="desc">天然鯛魚燒</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/クレープリー・アルション" target="_blank">crepe alcyon <span class="desc">正宗法式可麗餅</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/ストロベリーマニア" target="_blank">strawberry mania <span class="desc">草莓蒙布朗與大福</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/くろーばー結び+なんばウォーク店" target="_blank">くろーばー結び <span class="desc">爆餡柔軟銅鑼燒</span></a>
+            </div>
+            <div id="cat1-sub7" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/551蓬莱" target="_blank">551 蓬萊 <span class="desc">招牌豬肉包</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/たこ焼き十八番" target="_blank">十八番 章魚燒 <span class="desc">天婦羅碎章魚燒</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/串カツだるま+心斎橋店" target="_blank">達摩串炸心齋橋店 <span class="desc">元祖牛肉串炸</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/甲賀流たこ焼き" target="_blank">甲賀流章魚燒 <span class="desc">網狀美乃滋章魚燒</span></a>
+            </div>
+            <div id="cat1-sub8" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/なんばマルイ" target="_blank">難波丸井</a>
+                <a class="location-link" href="https://www.google.com/maps/search/ポケモンセンター" target="_blank">寶可夢中心</a>
+                <a class="location-link" href="https://www.google.com/maps/search/大丸" target="_blank">大丸百貨</a>
+                <a class="location-link" href="https://www.google.com/maps/search/PARCO" target="_blank">PARCO</a>
+            </div>
+
+            <!-- ================= 梅田 ================= -->
+            <div id="cat2-sub1" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/ダイコクドラッグ" target="_blank">大國藥妝</a>
+                <a class="location-link" href="https://www.google.com/maps/search/ドン・キホーテ" target="_blank">唐吉訶德</a>
+                <a class="location-link" href="https://www.google.com/maps/search/マツモトキヨシ" target="_blank">松本清</a>
+            </div>
+            <div id="cat2-sub2" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/駿河屋" target="_blank">駿河屋</a>
+                <a class="location-link" href="https://www.google.com/maps/search/アニメイト" target="_blank">安利美特 (Animate)</a>
+            </div>
+            <div id="cat2-sub3" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/GU" target="_blank">GU</a>
+                <a class="location-link" href="https://www.google.com/maps/search/HEP+FIVE" target="_blank">HEP FIVE</a>
+            </div>
+            <div id="cat2-sub4" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/fiveran" target="_blank">fiveran <span class="desc">招牌明太子法國</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/ブルーボトルコーヒー+梅田茶屋町カフェ" target="_blank">藍瓶咖啡 (梅田茶屋町店) <span class="desc">手沖咖啡與列日鬆餅</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/ホワイトバードコーヒースタンド" target="_blank">whitebird <span class="desc">深焙咖啡與咖啡凍</span></a>
+            </div>
+            <div id="cat2-sub5" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/ダイソー" target="_blank">大創</a>
+                <a class="location-link" href="https://www.google.com/maps/search/無印良品" target="_blank">無印良品</a>
+                <a class="location-link" href="https://www.google.com/maps/search/3COINS" target="_blank">3coins</a>
+            </div>
+            <div id="cat2-sub6" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/P.G+donut" target="_blank">P.G donut <span class="desc">生甜甜圈</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/Harbs" target="_blank">Harbs</a>
+                <a class="location-link" href="https://www.google.com/maps/search/grenier+梅田店" target="_blank">grenier梅田店 <span class="desc">烤布蕾千層酥</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/クレープリースタンド+シャンデレール" target="_blank">creperie stand chandeleur <span class="desc">法式奶油糖可麗餅</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/gariguette+osaka" target="_blank">gariguette osaka <span class="desc">圓盤法式千層酥</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/エシレ・マルシェ+オ+ブール+阪急うめだ本店" target="_blank">ÉCHIRÉ (阪急うめだ) <span class="desc">艾許奶油鐵盒餅乾</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/カヌレ+ダニエル" target="_blank">神戶花式可麗露Daniel <span class="desc">花式小可麗露</span></a>
+            </div>
+            <div id="cat2-sub7" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/餃子立山" target="_blank">餃子立山 <span class="desc">一口酥脆煎餃</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/香川+うどん+北新地" target="_blank">kagawa-udon kitashinchi <span class="desc">咖哩烏龍麵</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/はなだこ" target="_blank">hanadako <span class="desc">爆量蔥花章魚燒</span></a>
+            </div>
+            <div id="cat2-sub8" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/HEP+FIVE" target="_blank">HEP FIVE</a>
+                <a class="location-link" href="https://www.google.com/maps/search/ポケモンセンター" target="_blank">寶可夢中心</a>
+            </div>
+
+            <!-- ================= 神戶 ================= -->
+            <div id="cat3-sub4" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/ロンシュクレカフェ" target="_blank">Rond sucré cafe <span class="desc">招牌圓球小鬆餅</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/ブルーボトルコーヒー+神戸カフェ" target="_blank">藍瓶咖啡 (神戶店) <span class="desc">手沖咖啡與列日鬆餅</span></a>
+            </div>
+            <div id="cat3-sub5" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/ダイソー" target="_blank">大創</a>
+                <a class="location-link" href="https://www.google.com/maps/search/無印良品" target="_blank">無印良品</a>
+                <a class="location-link" href="https://www.google.com/maps/search/3COINS" target="_blank">3coins</a>
+            </div>
+            <div id="cat3-sub6" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/Harbs" target="_blank">Harbs</a>
+                <a class="location-link" href="https://www.google.com/maps/search/hanasaku+crepe" target="_blank">hanasaku crepe <span class="desc">花朵造型可麗餅</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/Patisserie+Tooth+Tooth" target="_blank">Patisserie Tooth Tooth <span class="desc">法式草莓水果塔</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/L'AVENUE+bis" target="_blank">L'AVENUE bis <span class="desc">冠軍巧克力冰淇淋</span></a>
+                <a class="location-link" href="https://www.google.com/maps/search/フロインドリーブ" target="_blank">freundlieb <span class="desc">蝴蝶酥與手工餅乾</span></a>
+            </div>
+            <div id="cat3-sub7" class="content-group">
+                <a class="location-link" href="https://www.google.com/maps/search/森谷商店" target="_blank">森谷商店 <span class="desc">神戶牛可樂餅</span></a>
+            </div>
+            <div id="cat3-sub8" class="content-group">
+                <div class="empty-state">此分類目前為空 🪹<br>留給你旅行途中挖掘的驚喜店家！</div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const subCategories = [
+        { id: 'sub1', name: '藥妝' },
+        { id: 'sub2', name: '動漫' },
+        { id: 'sub3', name: '衣服' },
+        { id: 'sub4', name: '咖啡廳' },
+        { id: 'sub5', name: '生活百貨' },
+        { id: 'sub6', name: '甜的' },
+        { id: 'sub7', name: '鹹的' },
+        { id: 'sub8', name: '其他' }
+    ];
+
+    let currentCat = '';
+
+    function goToCategory(catId, catName) {
+        currentCat = catId; 
+        hideAllViews();
+        document.getElementById('sub-view').classList.add('active');
+        document.getElementById('sub-title').innerText = catName;
+        
+        const container = document.getElementById('sub-buttons-container');
+        container.innerHTML = '';
+        subCategories.forEach(sub => {
+            // 當點擊的是神戶 (cat3) 時，過濾掉藥妝(sub1)、動漫(sub2)、衣服(sub3)
+            if (catId === 'cat3' && ['sub1', 'sub2', 'sub3'].includes(sub.id)) {
+                return; // 直接跳過，不生成按鈕
+            }
+            const btn = document.createElement('button');
+            btn.className = 'nav-btn sub-btn';
+            btn.innerHTML = `${sub.name} <span class="arrow-right">➔</span>`;
+            btn.onclick = () => goToLocation(`${currentCat}-${sub.id}`, `${catName} - ${sub.name}`);
+            container.appendChild(btn);
+        });
+    }
+
+    function goToLocation(locId, locName) {
+        hideAllViews();
+        document.getElementById('location-view').classList.add('active');
+        document.getElementById('loc-title').innerText = locName;
+        showContentGroup(locId);
+    }
+
+    function goBackToSub() {
+        hideAllViews();
+        document.getElementById('sub-view').classList.add('active');
+    }
+
+    function goBackToMain() {
+        hideAllViews();
+        document.getElementById('main-view').classList.add('active');
+    }
+
+    function hideAllViews() {
+        let views = document.querySelectorAll('.view');
+        views.forEach(view => view.classList.remove('active'));
+    }
+
+    function showContentGroup(targetId) {
+        let allContents = document.querySelectorAll('.content-group');
+        allContents.forEach(content => content.classList.remove('active'));
+        
+        const target = document.getElementById(targetId);
+        if (target) target.classList.add('active');
+    }
+</script>
+
+</body>
+</html>
